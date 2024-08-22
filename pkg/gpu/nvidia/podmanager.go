@@ -71,20 +71,24 @@ func disableCGPUIsolationOrNot() (bool, error) {
 	return disable, nil
 }
 
-func patchGPUCount(gpuCount int) error {
+func patchGPUCount(gpuCount int, devMemMap map[uint]uint) error {
 	node, err := clientset.CoreV1().Nodes().Get(nodeName, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
 
-	if val, ok := node.Status.Capacity[resourceCount]; ok {
-		if val.Value() == int64(gpuCount) {
-			log.Infof("No need to update Capacity %s", resourceCount)
-			return nil
-		}
-	}
+	//if val, ok := node.Status.Capacity[resourceCount]; ok {
+	//	if val.Value() == int64(gpuCount) {
+	//		log.Infof("No need to update Capacity %s", resourceCount)
+	//		return nil
+	//	}
+	//}
 
 	newNode := node.DeepCopy()
+	for id, mem := range devMemMap {
+		tmpResourceName := fmt.Sprintf("%s_%d", "aliyun.com/gpu", id)
+		newNode.Status.Capacity[v1.ResourceName(tmpResourceName)] = *resource.NewQuantity(int64(mem), resource.DecimalSI)
+	}
 	newNode.Status.Capacity[resourceCount] = *resource.NewQuantity(int64(gpuCount), resource.DecimalSI)
 	newNode.Status.Allocatable[resourceCount] = *resource.NewQuantity(int64(gpuCount), resource.DecimalSI)
 	// content := fmt.Sprintf(`[{"op": "add", "path": "/status/capacity/aliyun.com~gpu-count", "value": "%d"}]`, gpuCount)

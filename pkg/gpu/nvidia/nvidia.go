@@ -40,6 +40,14 @@ func setGPUMemory(raw uint) {
 	log.Infof("set gpu memory: %d", gpuMemory)
 }
 
+func formatGPUMemory(raw uint) uint {
+	v := raw
+	if metric == GiBPrefix {
+		v = raw / 1024
+	}
+	return v
+}
+
 func getGPUMemory() uint {
 	return gpuMemory
 }
@@ -50,12 +58,13 @@ func getDeviceCount() uint {
 	return n
 }
 
-func getDevices() ([]*pluginapi.Device, map[string]uint) {
+func getDevices() ([]*pluginapi.Device, map[string]uint, map[uint]uint) {
 	n, err := nvml.GetDeviceCount()
 	check(err)
 
 	var devs []*pluginapi.Device
 	realDevNames := map[string]uint{}
+	devMemMap := map[uint]uint{}
 	for i := uint(0); i < n; i++ {
 		d, err := nvml.NewDevice(i)
 		check(err)
@@ -67,10 +76,14 @@ func getDevices() ([]*pluginapi.Device, map[string]uint) {
 		realDevNames[d.UUID] = id
 		// var KiB uint64 = 1024
 		log.Infof("# device Memory: %d", uint(*d.Memory))
-		if getGPUMemory() == uint(0) {
-			setGPUMemory(uint(*d.Memory))
-		}
-		for j := uint(0); j < getGPUMemory(); j++ {
+		//if getGPUMemory() == uint(0) {
+		//	setGPUMemory(uint(*d.Memory))
+		//}
+		raw := uint(*d.Memory)
+		mem := formatGPUMemory(raw)
+		devMemMap[id] = mem
+		//for j := uint(0); j < getGPUMemory(); j++ {
+		for j := uint(0); j < mem; j++ {
 			fakeID := generateFakeDeviceID(d.UUID, j)
 			if j == 0 {
 				log.Infoln("# Add first device ID: " + fakeID)
@@ -85,7 +98,7 @@ func getDevices() ([]*pluginapi.Device, map[string]uint) {
 		}
 	}
 
-	return devs, realDevNames
+	return devs, realDevNames, devMemMap
 }
 
 func deviceExists(devs []*pluginapi.Device, id string) bool {

@@ -20,6 +20,7 @@ type NvidiaDevicePlugin struct {
 	devs                 []*pluginapi.Device
 	realDevNames         []string
 	devNameMap           map[string]uint
+	devMemMap            map[uint]uint
 	devIndxMap           map[uint]string
 	socket               string
 	mps                  bool
@@ -36,7 +37,7 @@ type NvidiaDevicePlugin struct {
 
 // NewNvidiaDevicePlugin returns an initialized NvidiaDevicePlugin
 func NewNvidiaDevicePlugin(mps, healthCheck, queryKubelet bool, client *client.KubeletClient) (*NvidiaDevicePlugin, error) {
-	devs, devNameMap := getDevices()
+	devs, devNameMap, devMemMap := getDevices()
 	devList := []string{}
 
 	for dev, _ := range devNameMap {
@@ -45,8 +46,9 @@ func NewNvidiaDevicePlugin(mps, healthCheck, queryKubelet bool, client *client.K
 
 	log.Infof("Device Map: %v", devNameMap)
 	log.Infof("Device List: %v", devList)
+	log.Infof("Device Mem Map: %v", devMemMap)
 
-	err := patchGPUCount(len(devList))
+	err := patchGPUCount(len(devList), devMemMap)
 	if err != nil {
 		return nil, err
 	}

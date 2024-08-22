@@ -118,7 +118,8 @@ func (m *NvidiaDevicePlugin) Allocate(ctx context.Context,
 					EnvResourceIndex:       fmt.Sprintf("%d", id),
 					EnvResourceByPod:       fmt.Sprintf("%d", podReqGPU),
 					EnvResourceByContainer: fmt.Sprintf("%d", reqGPU),
-					EnvResourceByDev:       fmt.Sprintf("%d", getGPUMemory()),
+					//EnvResourceByDev:       fmt.Sprintf("%d", getGPUMemory()),
+					EnvResourceByDev: fmt.Sprintf("%d", m.devMemMap[uint(id)]),
 				},
 			}
 			if m.disableCGPUIsolation {
@@ -165,7 +166,8 @@ func (m *NvidiaDevicePlugin) Allocate(ctx context.Context,
 					EnvResourceIndex:       fmt.Sprintf("%d", devIndex),
 					EnvResourceByPod:       fmt.Sprintf("%d", podReqGPU),
 					EnvResourceByContainer: fmt.Sprintf("%d", reqGPU),
-					EnvResourceByDev:       fmt.Sprintf("%d", getGPUMemory()),
+					//EnvResourceByDev:       fmt.Sprintf("%d", getGPUMemory()),
+					EnvResourceByDev: fmt.Sprintf("%d", m.devMemMap[uint(devIndex)]),
 				},
 			}
 			if m.disableCGPUIsolation {
